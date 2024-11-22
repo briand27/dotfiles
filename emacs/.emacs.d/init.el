@@ -185,6 +185,8 @@
    "C-o" 'insert-newline-after
    ;; I do this by mistake a lot
    "C-<return>" 'newline
+   ;; C-g for "go to line"
+   "C-g" 'goto-line
    ;; Similar to vs-code
    "C-p" 'fzf)
   (general-create-definer delete-keys
