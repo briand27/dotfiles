@@ -12,8 +12,8 @@
 (set-fringe-mode 10)			; Give some breathing room
 (menu-bar-mode -1)			; Disable the menu bar
 (setq visible-bell t)			; Set up the visible bell
-;; (set-face-attribute 'default nil :font "Fira Code Retina" :height 280)
-(load-theme 'doom-moonlight)
+(set-face-attribute 'default nil :font "Ubuntu Sans Mono" :height 140)
+(load-theme 'doom-moonlight t)
 
 ;; TODO
 ;; - [done] kill full line where cursor is
@@ -123,11 +123,13 @@
   :config
   (ivy-mode 1))
 
-(global-set-key (kbd "C-M-j") 'counsel-switch-buffer)
+(global-set-key (kbd "C-x b") 'counsel-switch-buffer)
 
 (define-key emacs-lisp-mode-map (kbd "C-x M-t") 'counsel-load-theme)
 
-(use-package all-the-icons)
+;; may need to run all-the-icons-install-fonts or nerd-icons-install-fonts to work
+(use-package all-the-icons
+  :if (display-graphic-p))
 
 (use-package doom-modeline
   :ensure t
@@ -187,17 +189,23 @@
    "C-<return>" 'newline
    ;; C-g for "go to line"
    "C-g" 'goto-line
-   ;; Similar to vs-code
-   "C-p" 'fzf)
-  (general-create-definer delete-keys
-    :keymaps '(global)		; TODO: what this
-    :prefix "C-d"
+   ;; Ctrl-Shift-f for global find
+   "C-<S-F>" 'fzf)
+  ;; TODO: use hydra for "delete mode"?
+  ;; (general-create-definer delete-keys
+;; :keymaps '(global)		; TODO: what this
+    ;; :prefix "C-d"
     ;; :global-prefix "C-d")		; TODO: how is this different than above?
-    )
-  (delete-keys				; TODO: fix this
-    "l" '(kill-whole-line :which-key "kill-line")
-    "d" '(kill-whole-line :which-key "kill-line")
-    "w" '(kill-whole-word :which-key "kill-word")))
+    ;; )
+  ;; (delete-keys				; TODO: fix this
+    ;; "l" '(kill-whole-line :which-key "kill-line")
+    ;; "d" '(kill-whole-line :which-key "kill-line")
+    ;; "w" '(kill-whole-word :which-key "kill-word"))
+  (general-create-definer briand/project-find-keys
+    :prefix "C-p")
+  (briand/project-find-keys
+   "p" '(counsel-fzf :which-key "fuzzy find file")
+   "f" '(counsel-projectile-rg :which-key "ripgrep project")))
 
 (defun kill-whole-word (&optional n)
   "Kill N tokens following the cursor is currently on."
@@ -208,36 +216,14 @@
 
 (use-package hydra)
 
-(use-package fzf)
+(use-package fzf
+  :config (setenv "FZF_DEFAULT_COMMAND" "rg --files"))
 
 (defhydra hydra-text-scale (:timeout 4)
   "scale text"
   ("j" text-scale-increase "in")
   ("k" text-scale-decrease "out")
   ("f" nil "finished" :ext t))
-
-(use-package projectile
-  :diminish projectile-mode
-  :config (projectile-mode)
-  :custom (projectile-completion-system 'ivy)
-  :bind-keymap
-  ("C-c p" . projectile-command-map)
-  :init
-  (when (file-directory-p "~/code")
-    (setq projectile-project-search-path '("~/code")))
-  (setq projectile-switch-project-action #'projectile-dired))
-
-(use-package counsel-projectile
-  :config (counsel-projectile-mode))
-
-(use-package magit
-  :commands (magit-status magit-get-current-branch)
-  :custom
-  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
-
-;; doesn't exist? 
-;; (use-package evil-magit
-;;   :after magit)
 
 (defun efs/org-mode-setup ()
   (org-indent-mode)
@@ -528,3 +514,205 @@ unless given a prefix argument."
        (unwind-protect
            (progn ,@subexprs)
          (goto-char ,orig-point-symbol)))))
+
+;; Stripe
+
+(defvar stripe-username "briand")
+
+(defun my/use-eslint-from-node-modules ()
+  (let ((eslint (get-eslint-executable)))
+    (when (and eslint (file-executable-p eslint))
+      (setq flycheck-javascript-eslint-executable eslint))))
+
+(defun my/use-flow-from-node-modules ()
+  (let ((flow (get-flow-executable)))
+    (when (and flow (file-exists-p flow))
+      (setq flycheck-javascript-flow-executable flow))))
+
+(use-package flycheck
+  :init
+  (setq flycheck-ruby-rubocop-executable "bundle exec rubocop")
+  (setq flycheck-ruby-executable (format "/Users/%s/.rbenv/shims/ruby" stripe-username))
+
+  :config
+  (setq-default flycheck-disabled-checkers
+                (append flycheck-disabled-checkers
+                        '(javascript-jshint)
+                        '(ruby-rubylint)
+                        '(json-jsonlist)
+                        '(emacs-lisp-checkdoc))))
+
+  ;; (add-hook 'flycheck-mode-hook #'my/use-eslint-from-node-modules)
+  ;; (add-hook 'flycheck-mode-hook #'my/use-flow-from-node-modules)
+
+  ;; ;; use eslint and flow with web-mode for jsx files
+  ;; (flycheck-add-mode 'javascript-eslint 'web-mode)
+  ;; (flycheck-add-mode 'javascript-flow 'web-mode)
+  ;; (flycheck-add-next-checker 'javascript-flow '(t . javascript-eslint))
+  ;; (global-flycheck-mode))
+
+;; (use-package projectile
+  ;; :init
+  ;; (setq projectile-indexing-method 'alien)
+  ;; (setq projectile-use-git-grep t)
+  ;; (setq projectile-tags-command "/usr/local/bin/ctags --exclude=node_modules --exclude=admin --exclude=.git --exclude=frontend --exclude=home --exclude=**/*.js -Re -f \"%s\" %s")
+
+  ;; :config
+  ;; (projectile-global-mode)
+
+  ;; :bind-keymap
+  ;; ("C-c p" 'projectile-command-map))
+
+(use-package projectile
+  :diminish projectile-mode
+  :config
+  (projectile-mode)
+  (setq projectil-indexing-method 'alien)
+  :custom ((projectile-completion-system 'ivy))
+  :bind-keymap
+  ("C-c p" . projectile-command-map))
+
+(use-package ruby-mode
+  :config
+  (defun my-ruby-mode-hook ()
+    (set-fill-column 80)
+    (add-hook 'before-save-hook 'delete-trailing-whitespace nil 'local)
+    (setq ruby-insert-encoding-magic-comment nil))
+  (add-hook 'ruby-mode-hook 'my-ruby-mode-hook))
+
+;; system crafters
+;; (use-package lsp-mode
+  ;; :commands (lsp lsp-deferred)
+  ;; :init
+  ;; (setq lsp-keymap-prefix "C-c l")
+  ;; :config
+  ;; (lsp-enable-which-key-integration t))
+
+;; (use-package lsp-ui :commands lsp-ui-mode)
+
+;; (use-package lsp-ivy :commands lsp-ivy-workspace-symbol)
+;; (use-package lsp-treemacs :commands lsp-treemacs-errors_list)
+
+;; (use-package company
+  ;; :after lsp-mode
+  ;; :hook (lsp-mode . company-mode)
+  ;; :bind (:map company-active-map
+         ;; ("<tab>" . company-complete-selection))
+        ;; (:map lsp-mode-map
+         ;; ("<tab>" . company-indent-or-complete-common))
+  ;; :custom
+  ;; (company-minimum-prefix-length 1)
+  ;; (company-idle-delay 0.0))
+
+;; java
+;; (use-package lsp-java :config (add-hook 'java-mode-hook 'lsp))
+
+;; (use-package dap-mode :after lsp-mode :config (dap-auto-configure-mode))
+;; (use-package dap-java :ensure nil)
+;; (use-package helm-lsp)
+;; (use-package helm :config (helm-mode))
+
+(use-package yaml-mode)
+
+;; typescript
+;; (use-package typescript-mode
+  ;; :mode "\\.ts\\'"
+  ;; :hook (typescript-mode . lsp-deferred)
+  ;; :config
+  ;; (setq typescript-indent-level 2))
+
+;; Set up LSP
+;; Hint: use M-. to go to a definition, and M-, to go back.
+;; (use-package lsp)
+;; (use-package lsp-mode :commands lsp)
+;; (use-package lsp-ui :commands lsp-ui-mode)
+;; (use-package company-lsp :commands company-lsp)
+;; (add-hook 'ruby-mode-hook #'lsp)
+;; (add-hook 'enh-ruby-mode-hook #'lsp)
+;; (setq lsp-prefer-flymake :none)
+;; (setq lsp-log-io t)
+;; (setq lsp-enable-snippet nil)
+
+;; Decides if the buffer is Ruby and in pay server
+;; (defun activate-pay-server-sorbet-p (filename mode)
+  ;; (and
+   ;; (string-prefix-p (expand-file-name "~/stripe/pay-server")
+                    ;; filename)
+   ;; (or (eq major-mode 'ruby-mode) (eq major-mode 'enh-ruby-mode))))
+
+;; Configure the connection to Sorbet
+;; (lsp-register-client
+ ;; (make-lsp-client :new-connection (lsp-stdio-connection '("pay" "exec" "scripts/bin/typecheck" "--lsp" "--enable-all-experimental-lsp-features"))
+                  ;; :major-modes '(ruby-mode enh-ruby-mode)
+                  ;; :priority 25
+                  ;; :activation-fn 'activate-pay-server-sorbet-p
+                  ;; :server-id 'stripe-sorbet-lsp))
+
+;; (use-package helm
+  ;; :bind (("M-x" . helm-M-x))
+  ;; :config
+  ;; (require 'helm-config)
+  ;; (helm-mode 1))
+
+
+
+(use-package smooth-scroll
+  :config (smooth-scroll-mode))
+
+(use-package web-mode
+  :init
+  (defun web-mode-customization ()
+    "Customization for web-mode."
+    (setq web-mode-markup-indent-offset 2)
+    (setq web-mode-attr-indent-offset 2)
+    (setq web-mode-css-indent-offset 2)
+    (setq web-mode-code-indent-offset 2)
+    (setq web-mode-enable-auto-pairing t)
+    (setq web-mode-enable-css-colorization t)
+    (add-hook 'before-save-hook 'delete-trailing-whitespace nil 'local))
+  (add-hook 'web-mode-hook 'web-mode-customization)
+
+  :mode ("\\.html?\\'" "\\.erb\\'" "\\.hbs\\'"
+         "\\.jsx?\\'" "\\.json\\'" "\\.s?css\\'"
+         "\\.less\\'" "\\.sass\\'" "\\.tsx?\\'"))
+
+(defun get-eslint-executable ()
+  (let ((root (locate-dominating-file
+                (or (buffer-file-name) default-directory)
+                "package.json")))
+    (and root
+         (expand-file-name "node_modules/eslint/bin/eslint.js"
+                           root))))
+
+(defun my/use-eslint-from-node-modules ()
+  (let ((eslint (get-eslint-executable)))
+    (when (and eslint (file-executable-p eslint))
+      (setq flycheck-javascript-eslint-executable eslint))))
+
+
+(use-package projectile-ripgrep)
+
+;; TODO: figure out how to change evil mode keybindings to not interfere with preferred emacs keybindings
+;; (use-package evil
+  ;; :init
+  ;; (setq evil-want-integration t)
+  ;; (setq evil-want-keybinding nil)
+  ;; (setq evil-want-C-u-scroll nil)
+  ;; (setq evil-want-C-i-jump nil)
+  ;; (setq evil-search-module 'swiper)
+  ;; :config
+  ;; (evil-mode 1)
+  ;; (define-key evil-insert-state-map (kbd "C-g") 'evil-normal-state))
+
+;; (use-package evil-collection
+  ;; :after evil
+  ;; :config
+  ;; (evil-collection-init))
+
+(use-package company
+  :hook (prog-mode . company-mode)
+  :bind (:map company-active-map
+              ("<tab>" . company-complete-selection))
+  :custom
+  (company-minimum-prefix-length 1)
+  (company-idle-delay 0.0))
