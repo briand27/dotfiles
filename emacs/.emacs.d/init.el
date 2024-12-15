@@ -12,7 +12,7 @@
 (set-fringe-mode 10)			; Give some breathing room
 (menu-bar-mode -1)			; Disable the menu bar
 (setq visible-bell t)			; Set up the visible bell
-(set-face-attribute 'default nil :font "Ubuntu Sans Mono" :height 140)
+(set-face-attribute 'default nil :font "Fira Code" :height 140)
 (load-theme 'doom-moonlight t)
 
 ;; TODO
@@ -192,15 +192,15 @@
    ;; Ctrl-Shift-f for global find
    "C-<S-F>" 'fzf)
   ;; TODO: use hydra for "delete mode"?
-  ;; (general-create-definer delete-keys
-;; :keymaps '(global)		; TODO: what this
-    ;; :prefix "C-d"
-    ;; :global-prefix "C-d")		; TODO: how is this different than above?
-    ;; )
-  ;; (delete-keys				; TODO: fix this
-    ;; "l" '(kill-whole-line :which-key "kill-line")
-    ;; "d" '(kill-whole-line :which-key "kill-line")
-    ;; "w" '(kill-whole-word :which-key "kill-word"))
+  (general-create-definer delete-keys
+    ;; :keymaps '(global)		; TODO: what this
+    :prefix "C-d"
+    :global-prefix "C-d"		; TODO: how is this different than above?
+  )
+  (delete-keys				; TODO: fix this
+    "l" '(kill-whole-line :which-key "kill-line")
+    "d" '(kill-whole-line :which-key "kill-line")
+    "w" '(kill-whole-word :which-key "kill-word"))
   (general-create-definer briand/project-find-keys
     :prefix "C-p")
   (briand/project-find-keys
@@ -716,3 +716,56 @@ unless given a prefix argument."
   :custom
   (company-minimum-prefix-length 1)
   (company-idle-delay 0.0))
+
+(use-package tramp)
+
+(use-package consult
+  :bind
+  ([remap goto-line] . consult-goto-line))
+
+(use-package protobuf-mode)
+
+(use-package format-all
+  :commands format-all-mode
+  :hook (progmode . format-all-mode))
+
+(use-package lsp-mode
+  :init
+  (setq lsp-keymap-prefix "C-c l")
+  :hook
+  (ruby-mode . lsp-deferred)
+  :commands
+  (lsp lsp-deferred)
+  :config
+  (setq lsp-sorbet-as-add-on t)
+  (setq lsp-sorbet-use-bundler t)
+  (setq lsp-enable-which-key-integration t)
+  (setq read-process-output-max (* 1024 1024)) ;; 1 MB
+  (setq gc-cons-threshold 100000000)
+  (setq lsp-use-plists t))
+
+(defun activate-pay-server-sorbet-p (filename mode)
+  (and
+   (string-prefix-p (expand-file-name "~/stripe/pay-server")
+                    filename)
+   (or (eq major-mode 'ruby-mode) (eq major-mode 'enh-ruby-mode))))
+
+(lsp-register-client
+ (make-lsp-client :new-connection (lsp-stdio-connection '("pay" "exec" "scripts/bin/typecheck" "--lsp" "--enable-all-experimental-lsp-features"))
+                  :major-modes '(ruby-mode enh-ruby-mode)
+                  :priority 25
+                  :activation-fn 'activate-pay-server-sorbet-p
+                  :server-id 'stripe-sorbet-lsp))
+
+(use-package lsp-ui
+  :hook (lsp-mode . lsp-ui-mode)
+  :custom (lsp-ui-doc-position 'bottom))
+
+(use-package lsp-ivy)
+
+(use-package lsp-treemacs
+  :after lsp)
+
+(use-package flycheck)
+
+(use-package company-mode)
