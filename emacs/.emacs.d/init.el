@@ -107,7 +107,7 @@
 
 (use-package ivy
   :diminish
-  :bind (("C-f" . swiper)
+  :bind (("C-s" . swiper)
 	 :map ivy-minibuffer-map
 	 ("TAB" . ivy-alt-done)
 	 ("C-l" . ivy-alt-done)
@@ -169,18 +169,20 @@
   (general-auto-unbind-keys)
   (general-define-key
    ;; Remap help to Ctrl-i like "info"
-   "C-i" 'help-command
+   ;; "C-i" 'help-command
    ;; Ctrl-f like "Find" with Swiper
-   "C-f" 'swiper
+   ;; "C-f" 'swiper
    ;; vim-like home row navigation
-   "C-h" 'backward-char
-   "C-j" 'next-line
-   "C-k" 'previous-line
-   "C-l" 'forward-char
-   "C-w" 'forward-word
-   "C-b" 'backward-word
+   ;; "C-h" 'backward-char
+   ;; "C-j" 'next-line
+   ;; "C-k" 'previous-line
+   ;; "C-l" 'forward-char
+   ;; "C-w" 'forward-word
+   ;; "C-b" 'backward-word
    ;; Ctrl-s for "Save"
-   "C-s" 'save-buffer
+   ;; "C-s" 'save-buffer
+   ;; Ctrl-s for "Swiper / Search"
+   "C-s" 'swiper
    ;; Ctrl-d for "delete line"
    ;; "C-d" 'kill-whole-line
    ;; Ctrl-o uses vim-line o rather than open-line
@@ -188,7 +190,7 @@
    ;; I do this by mistake a lot
    "C-<return>" 'newline
    ;; C-g for "go to line"
-   "C-g" 'goto-line
+   ;; "C-g" 'goto-line
    ;; Ctrl-Shift-f for global find
    "C-<S-F>" 'fzf)
   ;; TODO: use hydra for "delete mode"?
@@ -200,13 +202,12 @@
   (delete-keys				; TODO: fix this
     "l" '(kill-whole-line :which-key "kill-line")
     "d" '(kill-whole-line :which-key "kill-line")
-    "w" '(kill-whole-word :which-key "kill-word"))
-  (general-create-definer briand/project-find-keys
-    :prefix "C-p")
-  (briand/project-find-keys
-   "p" '(counsel-fzf :which-key "fuzzy find file")
-   "f" '(counsel-projectile-rg :which-key "ripgrep project")))
-
+    "w" '(kill-whole-word :which-key "kill-word")))
+  ;; (general-create-definer briand/project-find-keys
+    ;; :prefix "C-p")
+  ;; (briand/project-find-keys
+   ;; "p" '(counsel-fzf :which-key "fuzzy find file")
+   ;; "f" '(counsel-projectile-rg :which-key "ripgrep project")))
 (defun kill-whole-word (&optional n)
   "Kill N tokens following the cursor is currently on."
   (interactive "P")
