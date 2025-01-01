@@ -1,5 +1,4 @@
 (require 'package)
-(require 'use-package)
 
 ;; Basic configuration setup
 (setq inhibit-startup-message t)
@@ -12,8 +11,9 @@
 (set-fringe-mode 10)			; Give some breathing room
 (menu-bar-mode -1)			; Disable the menu bar
 (setq visible-bell t)			; Set up the visible bell
-(set-face-attribute 'default nil :font "Fira Code" :height 140)
-(load-theme 'doom-moonlight t)
+(if
+ (find-font (font-spec :name "Fira Code"))
+	    (set-face-attribute 'default nil :font "Fira Code" :height 140))
 
 ;; TODO
 ;; - [done] kill full line where cursor is
@@ -136,7 +136,8 @@
   :init (doom-modeline-mode 1)
   :custom ((doom-modeline-height 15)))
 
-(use-package doom-themes)
+(use-package doom-themes
+  :config (load-theme 'doom-moonlight t))
 
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
