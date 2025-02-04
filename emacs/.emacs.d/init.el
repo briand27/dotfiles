@@ -13,7 +13,11 @@
 (setq visible-bell t)			; Set up the visible bell
 (if
  (find-font (font-spec :name "Fira Code"))
-	    (set-face-attribute 'default nil :font "Fira Code" :height 140))
+    (set-face-attribute 'default nil :font "Fira Code" :height 120))
+
+(setq-default cursor-type 'bar)
+
+(server-start)
 
 ;; TODO
 ;; - [done] kill full line where cursor is
@@ -69,7 +73,7 @@
 (column-number-mode)
 (global-display-line-numbers-mode t)
 
-;; Disable line lumbers for some modes
+;; Disable line numbers for some modes
 (dolist (mode '(org-mode-hook
 		term-mode-hook
 		eshell-mode-hook
@@ -107,10 +111,12 @@
 
 (use-package ivy
   :diminish
-  :bind (("C-s" . swiper)
+  :bind (("C-c C-s" . swiper)
 	 :map ivy-minibuffer-map
 	 ("TAB" . ivy-alt-done)
 	 ("C-l" . ivy-alt-done)
+	 ("C-s" . ivy-next-line)
+	 ("C-r" . ivy-previous-line)
 	 ("C-j" . ivy-next-line)
 	 ("C-k" . ivy-previous-line)
 	 :map ivy-switch-buffer-map
@@ -162,60 +168,6 @@
   ([remap describe-variable] . counsel-describe-variable)
   ([remap describe-key] . helpful-key))
 
-;; TODO: repeat-mode. C-d l l l l should delete 4 lines and such
-;; These key bindings are not recognized by clm?
-;; nvm it's just some of the commands?
-(use-package general
-  :config
-  (general-auto-unbind-keys)
-  (general-define-key
-   ;; Remap help to Ctrl-i like "info"
-   ;; "C-i" 'help-command
-   ;; Ctrl-f like "Find" with Swiper
-   ;; "C-f" 'swiper
-   ;; vim-like home row navigation
-   ;; "C-h" 'backward-char
-   ;; "C-j" 'next-line
-   ;; "C-k" 'previous-line
-   ;; "C-l" 'forward-char
-   ;; "C-w" 'forward-word
-   ;; "C-b" 'backward-word
-   ;; Ctrl-s for "Save"
-   ;; "C-s" 'save-buffer
-   ;; Ctrl-s for "Swiper / Search"
-   "C-s" 'swiper
-   ;; Ctrl-d for "delete line"
-   ;; "C-d" 'kill-whole-line
-   ;; Ctrl-o uses vim-line o rather than open-line
-   "C-o" 'insert-newline-after
-   ;; I do this by mistake a lot
-   "C-<return>" 'newline
-   ;; C-g for "go to line"
-   ;; "C-g" 'goto-line
-   ;; Ctrl-Shift-f for global find
-   "C-<S-F>" 'fzf)
-  ;; TODO: use hydra for "delete mode"?
-  (general-create-definer delete-keys
-    ;; :keymaps '(global)		; TODO: what this
-    :prefix "C-d"
-    :global-prefix "C-d"		; TODO: how is this different than above?
-  )
-  (delete-keys				; TODO: fix this
-    "l" '(kill-whole-line :which-key "kill-line")
-    "d" '(kill-whole-line :which-key "kill-line")
-    "w" '(kill-whole-word :which-key "kill-word")))
-  ;; (general-create-definer briand/project-find-keys
-    ;; :prefix "C-p")
-  ;; (briand/project-find-keys
-   ;; "p" '(counsel-fzf :which-key "fuzzy find file")
-   ;; "f" '(counsel-projectile-rg :which-key "ripgrep project")))
-(defun kill-whole-word (&optional n)
-  "Kill N tokens following the cursor is currently on."
-  (interactive "P")
-  (if (eq (char-syntax (preceding-char)) ?w)
-      (backward-word))
-  (kill-word n))
-
 (use-package hydra)
 
 (use-package fzf
@@ -227,58 +179,58 @@
   ("k" text-scale-decrease "out")
   ("f" nil "finished" :ext t))
 
-(defun efs/org-mode-setup ()
-  (org-indent-mode)
-  (variable-pitch-mode 1)
-  (visual-line-mode 1))
+;; (defun efs/org-mode-setup ()
+  ;; (org-indent-mode)
+  ;; (variable-pitch-mode 1)
+  ;; (visual-line-mode 1))
 
 ;; Org Mode Configuration ------------------------------------------------------
 
-(defun efs/org-font-setup ()
+;; (defun efs/org-font-setup ()
   ;; Replace list hyphen with dot
-  (font-lock-add-keywords 'org-mode
-                          '(("^ *\\([-]\\) "
-                             (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
+  ;; (font-lock-add-keywords 'org-mode
+                          ;; '(("^ *\\([-]\\) "
+                             ;; (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
 
   ;; Set faces for heading levels
-  (dolist (face '((org-level-1 . 1.2)
-                  (org-level-2 . 1.1)
-                  (org-level-3 . 1.05)
-                  (org-level-4 . 1.0)
-                  (org-level-5 . 1.1)
-                  (org-level-6 . 1.1)
-                  (org-level-7 . 1.1)
-                  (org-level-8 . 1.1))))
+  ;; (dolist (face '((org-level-1 . 1.2)
+                  ;; (org-level-2 . 1.1)
+                  ;; (org-level-3 . 1.05)
+                  ;; (org-level-4 . 1.0)
+                  ;; (org-level-5 . 1.1)
+                  ;; (org-level-6 . 1.1)
+                  ;; (org-level-7 . 1.1)
+                  ;; (org-level-8 . 1.1))))
     ;; (set-face-attribute (car face) nil :font "Cantarell" :weight 'regular :height (cdr face)))
 
   ;; Ensure that anything that should be fixed-pitch in Org files appears that way
-  (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
-  (set-face-attribute 'org-code nil   :inherit '(shadow fixed-pitch))
-  (set-face-attribute 'org-table nil   :inherit '(shadow fixed-pitch))
-  (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
-  (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
-  (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
-  (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch))
+  ;; (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
+  ;; (set-face-attribute 'org-code nil   :inherit '(shadow fixed-pitch))
+  ;; (set-face-attribute 'org-table nil   :inherit '(shadow fixed-pitch))
+  ;; (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
+  ;; (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
+  ;; (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
+  ;; (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch))
 
 (use-package org
-  :hook (org-mode . efs/org-mode-setup)
+  ;; :hook (org-mode . efs/org-mode-setup)
   :config
-  (setq org-ellipsis " ▾")
-  (efs/org-font-setup))
+  (setq org-ellipsis " ▾"))
+  ;; (efs/org-font-setup))
 
-(use-package org-bullets
-  :after org
-  :hook (org-mode . org-bullets-mode)
-  :custom
-  (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
+;; (use-package org-bullets
+  ;; :after org
+  ;; :hook (org-mode . org-bullets-mode)
+  ;; :custom
+  ;; (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
 
-(defun efs/org-mode-visual-fill ()
-  (setq visual-fill-column-width 100
-        visual-fill-column-center-text t)
-  (visual-fill-column-mode 1))
+;; (defun efs/org-mode-visual-fill ()
+  ;; (setq visual-fill-column-width 100
+        ;; visual-fill-column-center-text t)
+  ;; (visual-fill-column-mode 1))
 
-(use-package visual-fill-column
-  :hook (org-mode . efs/org-mode-visual-fill))
+;; (use-package visual-fill-column
+  ;; :hook (org-mode . efs/org-mode-visual-fill))
 
 (use-package no-littering)
 
@@ -744,20 +696,18 @@ unless given a prefix argument."
   (setq lsp-enable-which-key-integration t)
   (setq read-process-output-max (* 1024 1024)) ;; 1 MB
   (setq gc-cons-threshold 100000000)
-  (setq lsp-use-plists t))
+  (setq lsp-use-plists t)
+  (lsp-register-client (make-lsp-client :new-connection (lsp-stdio-connection '("pay" "exec" "scripts/bin/typecheck" "--lsp" "--enable-all-experimental-lsp-features"))
+                  :major-modes '(ruby-mode enh-ruby-mode)
+                  :priority 25
+                  :activation-fn 'activate-pay-server-sorbet-p
+                  :server-id 'stripe-sorbet-lsp)))
 
 (defun activate-pay-server-sorbet-p (filename mode)
   (and
    (string-prefix-p (expand-file-name "~/stripe/pay-server")
                     filename)
    (or (eq major-mode 'ruby-mode) (eq major-mode 'enh-ruby-mode))))
-
-(lsp-register-client
- (make-lsp-client :new-connection (lsp-stdio-connection '("pay" "exec" "scripts/bin/typecheck" "--lsp" "--enable-all-experimental-lsp-features"))
-                  :major-modes '(ruby-mode enh-ruby-mode)
-                  :priority 25
-                  :activation-fn 'activate-pay-server-sorbet-p
-                  :server-id 'stripe-sorbet-lsp))
 
 (use-package lsp-ui
   :hook (lsp-mode . lsp-ui-mode)
@@ -770,4 +720,38 @@ unless given a prefix argument."
 
 (use-package flycheck)
 
-(use-package company-mode)
+;; (use-package company-mode)
+
+(use-package org-roam
+  :ensure t
+  :custom
+  (org-roam-directory (file-truename "~/org/roam/"))
+  (org-id-locations-file (file-truename "~/org/roam/.org-id-locations"))
+  :bind (("C-c n l" . org-roam-buffer-toggle)
+         ("C-c n f" . org-roam-node-find)
+         ("C-c n g" . org-roam-graph)
+         ("C-c n i" . org-roam-node-insert)
+         ("C-c n c" . org-roam-capture)
+         ;; Dailies
+         ("C-c n j" . org-roam-dailies-capture-today))
+  :config
+  ;; If you're using a vertical completion framework, you might want a more informative completion interface
+  ;; (setq org-roam-node-display-template (concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
+  (org-roam-db-autosync-mode))
+
+(setq backup-by-copying t)
+(setq backup-directory-alist
+      `(("." . "~/.emacs.d/.backups")))
+
+(use-package org-roam-ui)
+
+;; Latex
+
+(use-package auctex
+  :ensure t
+  :config
+  (setq TeX-auto-save t)
+  (setq TeX-parse-self t))
+
+(setq org-latex-pdf-process "lualatex")
+
