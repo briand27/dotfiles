@@ -119,6 +119,8 @@
 	 ("C-r" . ivy-previous-line)
 	 ("C-j" . ivy-next-line)
 	 ("C-k" . ivy-previous-line)
+	 ;; default binding unexpectedly clears buffer when typing fast
+	 ("S-SPC" . nil)
 	 :map ivy-switch-buffer-map
 	 ("C-k" . ivy-previous-line)
 	 ("C-l" . ivy-done)
