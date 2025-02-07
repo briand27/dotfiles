@@ -747,6 +747,34 @@ unless given a prefix argument."
 
 (use-package org-roam-ui)
 
+(use-package citar
+  :init
+  ;; for whatever reason bibtex-dialect is read as void-variable throwing error without this
+  (setq-default bibtex-dialect nil)
+  :custom
+  (citar-bibliography '("~/org/biblio.bib")))
+
+(use-package citar-org-roam
+  :after (citar org-roam)
+  :config (citar-org-roam-mode))
+
+;; Inspired by https://github.com/jethrokuan/org-roam-guide/blob/main/how_i_take_notes_in_org_roam.org
+(defun briand/org-roam-node-from-cite (keys-entries)
+  (interactive (list (citar-select-ref)))
+  (let ((title (string-trim (citar-format-reference (list keys-entries)))))
+     (org-roam-capture- :templates
+                       '(("r" "reference" plain "%?" :if-new
+                          (file+head "reference/${citekey}.org"
+                                     ":PROPERTIES:
+:ROAM_REFS: [cite:@${citekey}]
+:END:
+#+title: ${title}\n")
+                          :immediate-finish t
+                          :unnarrowed t))
+                       :info (list :citekey keys-entries)
+                       :node (org-roam-node-create :title title)
+                       :props '(:finalize find-file))))
+
 ;; Latex
 
 (use-package auctex
@@ -756,4 +784,10 @@ unless given a prefix argument."
   (setq TeX-parse-self t))
 
 (setq org-latex-pdf-process "lualatex")
+
+;; e-reader
+
+(use-package nov
+  :config
+  (add-to-list 'auto-mode-alist '("\\.epub\\'" . nov-mode)))
 
