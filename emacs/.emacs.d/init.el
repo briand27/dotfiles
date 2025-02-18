@@ -193,7 +193,7 @@
    ;; C-g for "go to line"
    ;; "C-g" 'goto-line
    ;; Ctrl-Shift-f for global find
-   "C-<S-F>" 'fzf)
+   "C-c f" 'fzf)
   ;; TODO: use hydra for "delete mode"?
   (general-create-definer delete-keys
     ;; :keymaps '(global)		; TODO: what this
@@ -736,6 +736,7 @@ unless given a prefix argument."
   (setq lsp-keymap-prefix "C-c l")
   :hook
   (ruby-mode . lsp-deferred)
+  (java-mode . lsp-deferred)
   :commands
   (lsp lsp-deferred)
   :config
@@ -744,20 +745,19 @@ unless given a prefix argument."
   (setq lsp-enable-which-key-integration t)
   (setq read-process-output-max (* 1024 1024)) ;; 1 MB
   (setq gc-cons-threshold 100000000)
-  (setq lsp-use-plists t))
+  (setq lsp-use-plists t)
+  (lsp-register-client
+   (make-lsp-client :new-connection (lsp-stdio-connection '("pay" "exec" "scripts/bin/typecheck" "--lsp" "--enable-all-experimental-lsp-features"))
+                    :major-modes '(ruby-mode enh-ruby-mode)
+                    :priority 25
+                    :activation-fn 'activate-pay-server-sorbet-p
+                    :server-id 'stripe-sorbet-lsp)))
 
 (defun activate-pay-server-sorbet-p (filename mode)
   (and
    (string-prefix-p (expand-file-name "~/stripe/pay-server")
                     filename)
    (or (eq major-mode 'ruby-mode) (eq major-mode 'enh-ruby-mode))))
-
-(lsp-register-client
- (make-lsp-client :new-connection (lsp-stdio-connection '("pay" "exec" "scripts/bin/typecheck" "--lsp" "--enable-all-experimental-lsp-features"))
-                  :major-modes '(ruby-mode enh-ruby-mode)
-                  :priority 25
-                  :activation-fn 'activate-pay-server-sorbet-p
-                  :server-id 'stripe-sorbet-lsp))
 
 (use-package lsp-ui
   :hook (lsp-mode . lsp-ui-mode)
@@ -770,4 +770,23 @@ unless given a prefix argument."
 
 (use-package flycheck)
 
-(use-package company-mode)
+(use-package lsp-java
+  :ensure t
+  :custom
+  (setq lsp-java-jdt-download-url "https://www.eclipse.org/downloads/download.php?file=/jdtls/milestones/1.43.0/jdt-language-server-1.43.0-202412191447.tar.gz")
+  ;; default java vmargs for vscode
+  ;; source https://emacs-lsp.github.io/lsp-java/#eclipse-jdt-language-server
+  (setq lsp-java-vmargs '("-XX:+UseParallelGC" "-XX:GCTimeRatio=4" "-XX:AdaptiveSizePolicyWeight=90" "-Dsun.zip.disableMemoryMapping=true" "-Xmx2G" "-Xms100m"))
+  :config
+  (add-hook 'java-mode-hook 'lsp))
+(use-package dap-mode :after lsp-mode :config (dap-auto-configure-mode))
+(use-package dap-java :ensure nil)
+(use-package helm-lsp)
+
+(use-package bazel)
+
+(use-package org-roam
+  :config
+  (make-directory "~/org-roam")
+  (setq org-roam-directory (file-truename "~/org-roam"))
+  (org-roam-db-autosync-mode))
