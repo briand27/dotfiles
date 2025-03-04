@@ -473,7 +473,7 @@ unless given a prefix argument."
 
 ;; Stripe
 
-(defvar stripe-username "briand")
+(defvar stripe-username "<username>")
 
 (defun my/use-eslint-from-node-modules ()
   (let ((eslint (get-eslint-executable)))
@@ -711,6 +711,10 @@ unless given a prefix argument."
                     filename)
    (or (eq major-mode 'ruby-mode) (eq major-mode 'enh-ruby-mode))))
 
+(use-package dap-mode
+  :after lsp-mode
+  :config (dap-auto-configure-mode))
+
 (use-package lsp-ui
   :hook (lsp-mode . lsp-ui-mode)
   :custom (lsp-ui-doc-position 'bottom))
@@ -721,6 +725,16 @@ unless given a prefix argument."
   :after lsp)
 
 (use-package flycheck)
+
+;; clojure
+
+(use-package clojure-mode
+  :mode ("\\.clj\\'"))
+
+(use-package cider)
+
+(use-package paredit
+  :hook (clojure-mode . paredit-mode))
 
 ;; (use-package company-mode)
 
@@ -759,7 +773,7 @@ unless given a prefix argument."
   :config (citar-org-roam-mode))
 
 ;; Inspired by https://github.com/jethrokuan/org-roam-guide/blob/main/how_i_take_notes_in_org_roam.org
-(defun briand/org-roam-node-from-cite (keys-entries)
+(defun my/org-roam-node-from-cite (keys-entries)
   (interactive (list (citar-select-ref)))
   (let ((title (string-trim (citar-format-reference (list keys-entries)))))
      (org-roam-capture- :templates
@@ -791,3 +805,8 @@ unless given a prefix argument."
   :config
   (add-to-list 'auto-mode-alist '("\\.epub\\'" . nov-mode)))
 
+;; edit current file with sudo
+(defun my/sudo-file ()
+  (interactive)
+  (if buffer-file-name
+	(find-file (concat "/sudo:root@chopper:" buffer-file-name))))
