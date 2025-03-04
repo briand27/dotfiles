@@ -711,9 +711,9 @@ unless given a prefix argument."
                     filename)
    (or (eq major-mode 'ruby-mode) (eq major-mode 'enh-ruby-mode))))
 
-(use-package dap-mode
-  :after lsp-mode
-  :config (dap-auto-configure-mode))
+;; (use-package dap-mode
+  ;; :after lsp-mode
+  ;; :config (dap-auto-configure-mode))
 
 (use-package lsp-ui
   :hook (lsp-mode . lsp-ui-mode)
@@ -734,7 +734,9 @@ unless given a prefix argument."
 (use-package cider)
 
 (use-package paredit
-  :hook (clojure-mode . paredit-mode))
+  :hook
+  (clojure-mode . paredit-mode)
+  (emacs-lisp-mode . paredit-mode))
 
 ;; (use-package company-mode)
 
