@@ -4,3 +4,5 @@ var/
 elpa/
 .backups/
 tramp
+*.key
+*#*

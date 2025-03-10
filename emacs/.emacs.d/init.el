@@ -812,3 +812,92 @@ unless given a prefix argument."
   (interactive)
   (if buffer-file-name
 	(find-file (concat "/sudo:root@chopper:" buffer-file-name))))
+
+(defun file-as-string (file-path)
+  (with-temp-buffer
+    (insert-file-contents (file-truename file-path))
+    (buffer-string)))
+
+(use-package gptel
+  :config
+  (setq
+   gptel-model 'claude-3-opus-20240229
+   gptel-backend (gptel-make-anthropic "Claude"
+		   :stream t
+		   :key (file-as-string "~/.emacs.d/anthropic.key")))
+  (gptel-make-tool
+   :name "read_buffer"
+   :function (lambda (buffer)
+               (unless (buffer-live-p (get-buffer buffer))
+		 (error "error: buffer %s is not live." buffer))
+               (with-current-buffer buffer
+		 (buffer-substring-no-properties (point-min) (point-max))))
+   :description "return the contents of an emacs buffer"
+   :args (list '(:name "buffer"
+		       :type string
+		       :description "the name of the buffer whose contents are to be retrieved"))
+   :category "emacs")
+  (gptel-make-tool
+   :name "create_file"
+   :function (lambda (path filename content)
+               (let ((full-path (expand-file-name filename path)))
+		 (with-temp-buffer
+                   (insert content)
+                   (write-file full-path))
+		 (format "Created file %s in %s" filename path)))
+   :description "Create a new file with the specified content"
+   :args (list '(:name "path"
+		       :type string
+		       :description "The directory where to create the file")
+               '(:name "filename"
+		       :type string
+		       :description "The name of the file to create")
+               '(:name "content"
+		       :type string
+		       :description "The content to write to the file"))
+   :category "filesystem")
+  (gptel-make-tool
+   :name "create_directory"
+   :function (lambda (path)
+               (let ((full-path (expand-file-name path)))
+                 (mkdir full-path t)
+                 (format "Created directory %s" path)))
+   :description "Create a new directory"
+   :args (list '(:name "path"
+                       :type string
+                       :description "The path of the directory to create"))
+   :category "filesystem")
+  (gptel-make-tool
+   :name "open_file"
+   :function (lambda (path filename)
+               (let ((full-path (expand-file-name filename path)))
+                 (find-file full-path)
+                 (format "Opened file %s in current buffer" filename)))
+   :description "Open a file in the current Emacs buffer"
+   :args (list '(:name "path"
+                       :type string
+                       :description "The directory containing the file")
+               '(:name "filename"
+                       :type string
+                       :description "The name of the file to open"))
+   :category "emacs")
+  (gptel-make-tool
+   :name "modify_buffer_and_save"
+   :function (lambda (buffer content)
+               (unless (buffer-live-p (get-buffer buffer))
+                 (error "error: buffer %s is not live." buffer))
+               (with-current-buffer buffer
+                 (erase-buffer)
+                 (insert content)
+                 (save-buffer))
+               (format "Modified buffer %s and saved the file" buffer))
+   :description "Modify the contents of a buffer and save the associated file"
+   :args (list '(:name "buffer"
+                       :type string
+                       :description "The name of the buffer to modify")
+               '(:name "content"
+                       :type string
+                       :description "The new content to insert into the buffer"))
+   :category "emacs")
+  )
+
