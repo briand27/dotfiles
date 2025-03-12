@@ -818,13 +818,28 @@ unless given a prefix argument."
     (insert-file-contents (file-truename file-path))
     (buffer-string)))
 
+(defun get-ollama-models ()
+  "Fetch the list of installed Ollama models."
+  (let* ((output (shell-command-to-string "ollama list"))
+         (lines (split-string output "\n" t))
+         models)
+    (dolist (line (cdr lines))		; Skip the first line
+      (when (string-match "^\\([^[:space:]]+\\)" line)
+        (push (match-string 1 line) models)))
+    (nreverse models)))
+
 (use-package gptel
   :config
   (setq
-   gptel-model 'claude-3-opus-20240229
-   gptel-backend (gptel-make-anthropic "Claude"
+   gptel-model 'deepseek-coder-v2:latest
+   gptel-backend (gptel-make-ollama "Ollama"
 		   :stream t
-		   :key (file-as-string "~/.emacs.d/anthropic.key")))
+		   :host "localhost:11434"
+		   :models (get-ollama-models)))
+  (add-hook 'gptel-post-response-functions 'gptel-end-of-response)
+  (gptel-make-anthropic "Claude"
+    :stream t
+    :key (file-as-string "~/.emacs.d/anthropic.key"))
   (gptel-make-tool
    :name "read_buffer"
    :function (lambda (buffer)
@@ -900,4 +915,3 @@ unless given a prefix argument."
                        :description "The new content to insert into the buffer"))
    :category "emacs")
   )
-
